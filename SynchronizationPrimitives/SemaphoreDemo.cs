@@ -1,7 +1,7 @@
 ﻿namespace SynchronizationPrimitives;
 public class SemaphoreDemo
 {
-    private readonly SemaphoreSlim _semaphore = new(2, 2);
+    private readonly SemaphoreSlim _semaphore = new(2, 2); 
     private int _activeTasks;
     private int _maxActiveTasks;
 

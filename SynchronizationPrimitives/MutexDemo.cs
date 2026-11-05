@@ -12,7 +12,6 @@ public class MutexDemo
         );
 
         bool acquired = mutex.WaitOne(0);
-
         if (!acquired)
         {
             Console.WriteLine(
