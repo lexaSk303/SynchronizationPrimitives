@@ -1,37 +1,25 @@
 ﻿using System.Collections.Concurrent;
+namespace SynchronizationPrimitives;
 
 public class ProducerConsumerDemo : IDisposable
 {
     private readonly ConcurrentQueue<int> _queue = new();
-
     private readonly AutoResetEvent _signal = new(false);
-
     private int _processedCount;
 
     public async Task RunAsync()
     {
-        Console.WriteLine();
-        Console.WriteLine("=== PRODUCER-CONSUMER DEMO ===");
+        Console.WriteLine("\n=== PRODUCER-CONSUMER DEMO ===");
+        Task consumerTask = Task.Run(Consume);
+        Task producer1 = Task.Run(() => Produce(1, 10));
+        Task producer2 = Task.Run(() => Produce(2, 10));
+        Task producer3 = Task.Run(() => Produce(3, 10));
+        Task producer4 = Task.Run(() => Produce(4, 10));
 
-        // Запускаем потребителя.
-        // восстановить
-
-        // Запускаем трёх производителей.
-        // Produce(1, 5)
-        // Produce(2, 5)
-        // Produce(3, 5)
-        // восстановить
-
-        // Ждём завершения производителей.
-        // восстановить
-
-        // Специальное значение означает завершение работы.
+        await Task.WhenAll(producer1, producer2, producer3, producer4);
         _queue.Enqueue(-1);
-
-        _signal.Set();
-
-        // Ждём завершения потребителя.
-        // восстановить
+        _signal.Set(); 
+        await consumerTask;
 
         Console.WriteLine();
         Console.WriteLine($"Обработано элементов: {_processedCount}");
@@ -42,45 +30,38 @@ public class ProducerConsumerDemo : IDisposable
         for (int i = 1; i <= count; i++)
         {
             int value = producerId * 100 + i;
-
             _queue.Enqueue(value);
-
-            Console.WriteLine(
-                $"Производитель {producerId}: создал {value}");
-
-            // Сообщаем потребителю о появлении данных через _signal.
-            // восстановить
-
+            Console.WriteLine($"Производитель {producerId}: создал {value}");
+            _signal.Set();
             Thread.Sleep(Random.Shared.Next(100, 400));
         }
-
-        Console.WriteLine(
-            $"Производитель {producerId}: завершил работу");
+        Console.WriteLine($"Производитель {producerId}: завершил работу");
     }
 
     private void Consume()
     {
         while (true)
         {
-            // Ждём сигнала о появлении данных.
-            // восстановить
+            _signal.WaitOne();
 
-            // Забираем все доступные элементы.
+
             while (_queue.TryDequeue(out int value))
             {
-                // -1 — специальный сигнал завершения.
                 if (value == -1)
                 {
                     Console.WriteLine("Потребитель завершает работу.");
                     return;
                 }
-
-                Console.WriteLine(
-                    $"Потребитель обработал: {value}");
-
+                if (value > 250)
+                {
+                    Console.WriteLine($"[!] Высокоприоритетная задача: {value}");
+                }
+                else
+                {
+                    Console.WriteLine($"Потребитель обработал: {value}");
+                }
                 Interlocked.Increment(ref _processedCount);
-
-                Thread.Sleep(200);
+                Thread.Sleep(1000);
             }
         }
     }
